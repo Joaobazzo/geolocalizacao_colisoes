@@ -13,26 +13,36 @@ head(bateu)
 road <- read_sf("C:/Users/João Bazzo/Dropbox/Infraestrutura Cicloviária no Estado do Paraná/Joao/roads/shp/cwb.shp")
 head(road)
 # ---
-# manipulation
+# manipulation ####
 # ---
 crs = st_crs(4326)
 aux <- list()
-for(i in 1:length(bateu$lat)){aux[[i]] <- st_point(c(bateu$lat[i],bateu$long[i]))}
+for(i in 1:length(bateu$lat)){aux[[i]] <- st_point(c(bateu$long[i],bateu$lat[i]))}
 aux1 <- st_sfc(aux)
-shp_bateu <- st_sf(geom=aux1,crs=crs)
+shp_bateu <- st_sf(bateu,geom=aux1,crs=crs)
 # road
 
 # ---
-# intersection
+# intersection ####
 # ---
-st_intersection(road$geometry,shp_bateu[1]) 
-
-a0 <- as.matrix(data.frame(bateu$lat[1:5],bateu$long[1:5]))
-a1 <- st_multipoint(a0)
-a2 <- st_sfc(a1)
-a3 <- st_sf(b=1, geom = a2, crs = crs)
-a3
-
-pts = matrix(1:15, , 3)
-(mp2 = st_multipoint(pts))
-(mp3 = st_multipoint(pts, "XYM"))
+a <- road$geometry; b <- shp_bateu
+shp_bateu$name <- c()
+shp_bateu$fclass <- c()
+shp_bateu$oneway <- c()
+shp_bateu$maxspeed <- c()
+for(i in 1:length(shp_bateu$Tipo.Registro)){ # 
+  d <- st_nearest_feature(x=b[i,],y=a)
+  # road
+  aux <- road[d,c("name","fclass","oneway","maxspeed")]
+  aux <- as.data.frame(aux)[c(1:4)]
+  shp_bateu$name[i] <- aux$name
+  shp_bateu$fclass[i] <- aux$fclass
+  shp_bateu$oneway[i] <- aux$oneway
+  shp_bateu$maxspeed[i] <- aux$maxspeed
+}
+# --
+# saving ####
+# --
+write_sf(shp_bateu,
+         "geolocation_github-repo/geolocalizacao_colisoes/pre-processed_data/shp/bicycle_crash_osmdata-merged.shp")
+break()
